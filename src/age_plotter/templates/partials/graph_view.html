@@ -1,0 +1,47 @@
+<div class="graph-container relative overflow-hidden" style="width: calc(100vw - 1rem); max-width: calc(100vw - 1rem); margin-left: calc(-50vw + 50% + 0.5rem);">
+    <!-- Graph canvas -->
+    <div class="cytoscape-container bg-base-200 rounded-lg w-full h-full overflow-hidden"
+         data-nodes='{{ nodes_json | tojson }}'
+         data-relationships='{{ relationships_json | tojson }}'>
+    </div>
+
+    <!-- Graph controls -->
+    <div class="absolute top-2 right-2 flex items-center gap-2">
+        <select class="select select-xs bg-base-100/80" onchange="graphChangeLayout(this)" title="Layout">
+            <option value="d3Force" selected>D3-Force</option>
+            <option value="fcose">fCoSE</option>
+            <option value="cola">Cola</option>
+            <option value="coseBilkent">CoSE-Bilkent</option>
+            <option value="cose">CoSE</option>
+        </select>
+        <button class="btn btn-xs btn-ghost bg-base-100/80" onclick="graphFit(this)" title="Fit to view">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+        </button>
+        <button class="btn btn-xs btn-ghost bg-base-100/80" onclick="graphReset(this)" title="Re-run layout">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Legend overlay -->
+    <div class="legend-panel absolute right-2 bg-base-200/90 backdrop-blur-sm rounded-lg p-3 overflow-y-auto" style="top: 3rem; max-height: 60vh;">
+        <h4 class="font-medium text-sm mb-2">Legend</h4>
+
+        <div class="node-labels mb-3">
+            <h5 class="text-xs text-base-content/60 mb-1">Node Labels</h5>
+            <div class="legend-items space-y-1">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <div class="rel-types">
+            <h5 class="text-xs text-base-content/60 mb-1">Relationships</h5>
+            <div class="legend-items space-y-1">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+</div>

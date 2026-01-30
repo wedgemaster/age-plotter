@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Query - Age Plotter{% endblock %}
+
+{% block head %}
+<!-- Monaco Editor Loader (local) -->
+<script src="/static/vendor/monaco/vs/loader.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+    <!-- Connection header -->
+    <div class="flex items-center justify-between bg-base-100 p-4 rounded-lg shadow">
+        <div class="flex items-center gap-3">
+            <div class="badge badge-lg {% if connection_type == 'neo4j' %}badge-primary{% else %}badge-secondary{% endif %}">
+                {{ connection_type | upper }}
+            </div>
+            <span class="text-lg font-medium">{{ connection.name }}</span>
+        </div>
+        <a href="/" class="btn btn-ghost btn-sm">Change Connection</a>
+    </div>
+
+    <!-- Query form -->
+    <form id="query-form"
+          hx-post="/query/execute"
+          hx-target="#results"
+          hx-swap="none"
+          hx-indicator="#run-btn .htmx-indicator"
+          hx-on::before-request="showCancel()"
+          hx-on::after-request="handleQueryResult(event)">
+
+        <!-- Monaco editor container -->
+        <div class="bg-base-100 rounded-lg shadow overflow-hidden py-3">
+            <div id="editor"
+                 class="min-h-[7rem]"
+                 style="height: 7rem;"
+                 data-connection-type="{{ connection_type }}"
+                 data-graph-name="{{ graph_name }}"></div>
+        </div>
+
+        <!-- Hidden input for query content (synced from Monaco) -->
+        <input type="hidden" name="query" id="query-input">
+
+        <!-- Toolbar row -->
+        <div class="flex items-center gap-4 mt-4">
+            <!-- AGE mode toggle (only for AGE connections) -->
+            {% if connection_type == 'age' %}
+            <label class="flex items-center gap-2 cursor-pointer">
+                <span class="text-sm">Cypher Only</span>
+                <input type="hidden" name="cypher_only" id="cypher-only-hidden" value="true">
+                <input type="checkbox"
+                       id="cypher-only-mode"
+                       class="toggle toggle-sm"
+                       onchange="document.getElementById('cypher-only-hidden').value = this.checked ? '' : 'true'; switchAgeMode(!this.checked)">
+                <span class="text-sm">Full SQL</span>
+            </label>
+            {% endif %}
+
+            <!-- Spacer -->
+            <div class="flex-1"></div>
+
+            <!-- Timeout selector -->
+            <div class="flex items-center gap-2">
+                <span class="text-sm text-base-content/70">Timeout:</span>
+                <select name="timeout" class="select select-bordered select-sm">
+                    <option value="5000">5s</option>
+                    <option value="15000">15s</option>
+                    <option value="30000" selected>30s</option>
+                    <option value="60000">60s</option>
+                    <option value="120000">120s</option>
+                </select>
+            </div>
+
+            <!-- Run button -->
+            <button id="run-btn" type="submit" class="btn btn-primary btn-sm min-w-16">
+                <span class="htmx-indicator loading loading-spinner loading-sm absolute"></span>
+                <span class="run-text">Run</span>
+            </button>
+
+            <!-- Cancel button (hidden by default) -->
+            <button id="cancel-btn"
+                    type="button"
+                    class="btn btn-error btn-sm hidden"
+                    hx-post="/query/cancel"
+                    hx-swap="none">
+                Cancel
+            </button>
+        </div>
+    </form>
+
+    <!-- Error display -->
+    <div id="error-display" class="hidden">
+        <!-- Populated by HTMX on error -->
+    </div>
+
+    <!-- History dropdown -->
+    <div id="history-container" class="bg-base-100 rounded-lg shadow p-3 hidden">
+        <div class="flex items-center gap-2 min-w-0">
+            <select id="history-dropdown" class="select select-bordered select-sm flex-1 min-w-0" onchange="selectHistoryEntry(this.value)">
+                <option value="" disabled selected>Query History (0)</option>
+                <!-- Options populated by JS -->
+            </select>
+            <button id="star-btn" class="btn btn-ghost btn-sm flex-shrink-0" onclick="toggleSelectedStar()" title="Star/unstar query">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                </svg>
+            </button>
+            <div class="dropdown dropdown-end flex-shrink-0">
+                <button tabindex="0" class="btn btn-ghost btn-sm text-error" title="Delete options">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <ul tabindex="0" class="dropdown-content menu bg-base-200 rounded-box w-44 shadow-lg z-50">
+                    <li><a onclick="deleteSelected()">Delete selected</a></li>
+                    <li><a onclick="clearAllHistory()" class="text-error">Delete all</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results container -->
+    <div id="results">
+        <!-- Populated by HTMX after query execution -->
+    </div>
+
+    <!-- Node properties modal -->
+    {% include "partials/node_modal.html" %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Connection config for JS -->
+<script>
+    window.connectionConfig = {
+        name: "{{ connection.name | e }}",
+        type: "{{ connection_type }}",
+        isAge: {{ 'true' if connection_type == 'age' else 'false' }}
+    };
+</script>
+
+<!-- Shared tokens (must load first) -->
+<script src="/static/js/cypher-tokens.js"></script>
+
+<!-- Cypher language definitions -->
+<script src="/static/js/cypher-neo4j.js"></script>
+<script src="/static/js/cypher-age.js"></script>
+
+<!-- Schema and completions -->
+<script src="/static/js/schema-cache.js"></script>
+<script src="/static/js/completions.js"></script>
+<script src="/static/js/schema-popover.js"></script>
+
+<!-- Editor setup -->
+<script src="/static/js/editor.js"></script>
+
+<!-- Result display and graph -->
+<script src="/static/js/results.js"></script>
+<script src="/static/js/graph.js"></script>
+
+<script>
+    function showCancel() {
+        document.getElementById('cancel-btn').classList.remove('hidden');
+        document.getElementById('run-btn').disabled = true;
+    }
+
+    function hideCancel() {
+        document.getElementById('cancel-btn').classList.add('hidden');
+        document.getElementById('run-btn').disabled = false;
+    }
+</script>
+{% endblock %}

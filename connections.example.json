@@ -1,0 +1,22 @@
+{
+  "connections": [
+    {
+      "name": "Local Neo4j",
+      "type": "neo4j",
+      "uri": "bolt://localhost:7687",
+      "username": "neo4j",
+      "password": "your-password-here",
+      "database": "neo4j"
+    },
+    {
+      "name": "Local AGE",
+      "type": "age",
+      "host": "localhost",
+      "port": 5432,
+      "database": "your-age-db",
+      "username": "your-age-user-name",
+      "password": "your-password-here",
+      "graph_name": "your-age-graph"
+    }
+  ]
+}

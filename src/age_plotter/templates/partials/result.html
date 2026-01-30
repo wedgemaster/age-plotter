@@ -1,0 +1,33 @@
+<div class="card bg-base-100 shadow-xl">
+    <div class="card-body">
+        <div class="flex justify-between items-center">
+            <h3 class="card-title text-sm">
+                {{ result.row_count }} row{{ 's' if result.row_count != 1 else '' }}
+                in {{ "%.2f"|format(result.execution_time_ms) }}ms
+            </h3>
+            <!-- View toggle will go here in Step 5 -->
+        </div>
+
+        <!-- Table view (Step 5 will expand this) -->
+        <div class="overflow-x-auto">
+            <table class="table table-zebra table-sm">
+                <thead>
+                    <tr>
+                        {% for col in result.columns %}
+                        <th>{{ col }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in result.rows %}
+                    <tr>
+                        {% for val in row %}
+                        <td>{{ val }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,32 @@
+# Git
+.git
+.gitignore
+
+# Node
+node_modules
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+.venv
+.mypy_cache
+.pytest_cache
+.ruff_cache
+
+# IDE
+.idea
+.vscode
+*.swp
+
+# Build artifacts (rebuilt in Docker)
+src/age_plotter/static/css/styles.css
+src/age_plotter/static/vendor/
+
+# Local config
+connections.json
+*.local.json
+
+# Specs/docs
+spec/
+*.md

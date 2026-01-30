@@ -1,0 +1,13 @@
+services:
+  age-plotter:
+    image: ghcr.io/wedgemaster/age-plotter:main
+    ports:
+      - "${AGE_PLOTTER_PORT:-8100}:${AGE_PLOTTER_PORT:-8100}"
+    environment:
+      - AGE_PLOTTER_PORT=${AGE_PLOTTER_PORT:-8100}
+      - AGE_PLOTTER_HOST=0.0.0.0
+      - AGE_PLOTTER_CONNECTIONS=/app/connections.json
+    volumes:
+      # Mount connections file (create from connections.example.json)
+      - ./connections.json:/app/connections.json:ro
+    restart: unless-stopped

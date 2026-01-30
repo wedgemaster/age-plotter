@@ -1,0 +1,29 @@
+<div class="result-panel" data-panel-id="{{ panel_id }}"
+     data-nodes='{{ nodes_json | tojson }}'
+     data-relationships='{{ relationships_json | tojson }}'
+     data-graph-compatible='{{ is_graph_compatible | tojson }}'>
+    <!-- View toggle -->
+    <div class="flex items-center justify-between mb-4">
+        <span class="text-sm text-base-content/70 pl-3">
+            {{ result.row_count }} row{{ 's' if result.row_count != 1 else '' }}
+            in {{ "%.2f"|format(result.execution_time_ms) }}ms
+        </span>
+        <div class="join">
+            <button class="btn btn-sm join-item view-toggle {% if not is_graph_compatible %}btn-active{% endif %}" data-view="table" {% if is_graph_compatible and is_paths_only %}disabled title="Table view not useful for path-only results"{% endif %}>Table</button>
+            <button class="btn btn-sm join-item view-toggle {% if is_graph_compatible %}btn-active{% endif %}" data-view="graph" {% if not is_graph_compatible %}disabled title="Graph view requires nodes and relationships only"{% endif %}>Graph</button>
+        </div>
+    </div>
+
+    <!-- Separator -->
+    <div class="border-t border-base-content/20" style="width: calc(100vw - 1rem); margin-left: calc(-50vw + 50% + 0.5rem);"></div>
+
+    <!-- Table view (default if not graph compatible) -->
+    <div class="view-content table-view {% if is_graph_compatible %}hidden{% endif %}">
+        {% include "partials/table_view.html" %}
+    </div>
+
+    <!-- Graph view (default if graph compatible) -->
+    <div class="view-content graph-view {% if not is_graph_compatible %}hidden{% endif %}">
+        {% include "partials/graph_view.html" %}
+    </div>
+</div>

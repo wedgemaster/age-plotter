@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}Connections - Age Plotter{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Alert Messages -->
+    {% if error %}
+    <div class="alert alert-error">
+        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>{{ error }}</span>
+    </div>
+    {% endif %}
+
+    {% if success %}
+    <div class="alert alert-success">
+        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>{{ success }}</span>
+    </div>
+    {% endif %}
+
+    <!-- Existing Connections -->
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title">Saved Connections</h2>
+
+            {% if connections %}
+            <div class="overflow-x-auto">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for conn in connections %}
+                        <tr class="{% if active_connection and active_connection.id == conn.id %}bg-base-200{% endif %}">
+                            <td>
+                                {{ conn.name }}
+                                {% if active_connection and active_connection.id == conn.id %}
+                                <span class="badge badge-primary badge-sm ml-2">Active</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if conn.type.value == 'neo4j' %}
+                                <span class="badge badge-info">Neo4j</span>
+                                {% else %}
+                                <span class="badge badge-warning">AGE</span>
+                                {% endif %}
+                            </td>
+                            <td class="space-x-2">
+                                <form action="/connections/{{ conn.id }}/select" method="post" class="inline">
+                                    <button type="submit" class="btn btn-primary btn-sm">Connect</button>
+                                </form>
+                                <button
+                                    class="btn btn-error btn-sm"
+                                    hx-delete="/connections/{{ conn.id }}"
+                                    hx-target="body"
+                                    hx-confirm="Delete this connection?">
+                                    Delete
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-base-content/70">No connections saved yet. Create one below.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- New Connection Form -->
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title">New Connection</h2>
+
+            <form action="/connections" method="post" class="space-y-4" onkeydown="return event.key !== 'Enter' || event.target.type === 'submit'">
+                <!-- Connection Name -->
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Connection Name</span>
+                    </label>
+                    <input
+                        type="text"
+                        name="connection_name"
+                        placeholder="My Database"
+                        value="{{ form.connection_name if form else '' }}"
+                        class="input input-bordered"
+                        required />
+                </div>
+
+                <!-- Connection Type Tabs -->
+                <div role="tablist" class="tabs tabs-boxed">
+                    <input type="radio" name="connection_type" value="neo4j" role="tab" class="tab" aria-label="Neo4j"
+                           {{ 'checked' if not form or form.connection_type == 'neo4j' else '' }}
+                           onclick="switchToNeo4j()" />
+                    <input type="radio" name="connection_type" value="age" role="tab" class="tab" aria-label="PostgreSQL AGE"
+                           {{ 'checked' if form and form.connection_type == 'age' else '' }}
+                           onclick="switchToAge()" />
+                </div>
+
+                <!-- Neo4j Fields -->
+                <div id="neo4j-fields" class="space-y-4 {{ 'hidden' if form and form.connection_type == 'age' else '' }}">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">URI</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="neo4j_uri"
+                            placeholder="bolt://localhost:7687"
+                            value="{{ form.neo4j_uri if form else 'bolt://localhost:7687' }}"
+                            class="input input-bordered neo4j-required"
+                            {{ 'required' if not form or form.connection_type == 'neo4j' else '' }} />
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Username</span>
+                            </label>
+                            <input
+                                type="text"
+                                name="neo4j_username"
+                                placeholder="neo4j"
+                                value="{{ form.neo4j_username if form else 'neo4j' }}"
+                                class="input input-bordered neo4j-required"
+                                {{ 'required' if not form or form.connection_type == 'neo4j' else '' }} />
+                        </div>
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Password</span>
+                            </label>
+                            <input
+                                type="password"
+                                name="neo4j_password"
+                                value="{{ form.neo4j_password if form else '' }}"
+                                class="input input-bordered neo4j-required"
+                                {{ 'required' if not form or form.connection_type == 'neo4j' else '' }} />
+                        </div>
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Database</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="neo4j_database"
+                            placeholder="neo4j"
+                            value="{{ form.neo4j_database if form else 'neo4j' }}"
+                            class="input input-bordered" />
+                    </div>
+                </div>
+
+                <!-- AGE Fields -->
+                <div id="age-fields" class="space-y-4 {{ '' if form and form.connection_type == 'age' else 'hidden' }}">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Host</span>
+                            </label>
+                            <input
+                                type="text"
+                                name="age_host"
+                                placeholder="localhost"
+                                value="{{ form.age_host if form else 'localhost' }}"
+                                class="input input-bordered age-required"
+                                {{ 'required' if form and form.connection_type == 'age' else '' }} />
+                        </div>
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Port</span>
+                            </label>
+                            <input
+                                type="number"
+                                name="age_port"
+                                placeholder="5432"
+                                value="{{ form.age_port if form else '5432' }}"
+                                class="input input-bordered" />
+                        </div>
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Database</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="age_database"
+                            placeholder="postgres"
+                            value="{{ form.age_database if form else '' }}"
+                            class="input input-bordered age-required"
+                            {{ 'required' if form and form.connection_type == 'age' else '' }} />
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Username</span>
+                            </label>
+                            <input
+                                type="text"
+                                name="age_username"
+                                placeholder="postgres"
+                                value="{{ form.age_username if form else 'postgres' }}"
+                                class="input input-bordered age-required"
+                                {{ 'required' if form and form.connection_type == 'age' else '' }} />
+                        </div>
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Password</span>
+                            </label>
+                            <input
+                                type="password"
+                                name="age_password"
+                                value="{{ form.age_password if form else '' }}"
+                                class="input input-bordered age-required"
+                                {{ 'required' if form and form.connection_type == 'age' else '' }} />
+                        </div>
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Graph Name</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="age_graph_name"
+                            placeholder="my_graph"
+                            value="{{ form.age_graph_name if form else '' }}"
+                            class="input input-bordered age-required"
+                            {{ 'required' if form and form.connection_type == 'age' else '' }} />
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="form-control mt-6">
+                    <button type="submit" class="btn btn-primary">Connect</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function switchToNeo4j() {
+    document.getElementById('neo4j-fields').classList.remove('hidden');
+    document.getElementById('age-fields').classList.add('hidden');
+
+    // Enable Neo4j required fields
+    document.querySelectorAll('.neo4j-required').forEach(el => el.required = true);
+    // Disable AGE required fields
+    document.querySelectorAll('.age-required').forEach(el => el.required = false);
+}
+
+function switchToAge() {
+    document.getElementById('age-fields').classList.remove('hidden');
+    document.getElementById('neo4j-fields').classList.add('hidden');
+
+    // Disable Neo4j required fields
+    document.querySelectorAll('.neo4j-required').forEach(el => el.required = false);
+    // Enable AGE required fields
+    document.querySelectorAll('.age-required').forEach(el => el.required = true);
+}
+</script>
+{% endblock %}

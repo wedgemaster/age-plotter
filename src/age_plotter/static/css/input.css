@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Table text color for better contrast */
+.table tbody td,
+.table tbody td span {
+    color: oklch(var(--bc));
+}
+
+/* Column resize handles */
+.resize-handle {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    cursor: col-resize;
+    opacity: 0;
+    background: oklch(var(--bc) / 0.3);
+}
+th:hover .resize-handle,
+.resize-handle.resizing {
+    opacity: 1;
+}
+
+/* Info icon for property tooltips */
+.clickable-cell {
+    position: relative;
+}
+.clickable-cell .info-icon {
+    position: absolute;
+    right: -1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    visibility: hidden;
+    font-size: 0.75rem;
+    cursor: help;
+}
+tr:hover .clickable-cell .info-icon {
+    visibility: visible;
+}
+
+/* Property tooltip */
+.property-tooltip {
+    position: fixed;
+    z-index: 1000;
+    background: oklch(var(--b2));
+    border: 1px solid oklch(var(--bc) / 0.2);
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    max-width: 600px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.125rem 0.5rem;
+}
+.property-tooltip .prop-key {
+    color: oklch(var(--bc) / 0.7);
+    text-align: right;
+}
+.property-tooltip .prop-value {
+    color: oklch(var(--bc));
+    text-align: left;
+}

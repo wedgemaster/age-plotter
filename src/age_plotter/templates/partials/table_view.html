@@ -1,0 +1,41 @@
+{% if result.rows %}
+<div class="table-container overflow-x-auto" style="width: calc(100vw - 1rem); margin-left: calc(-50vw + 50% + 0.5rem);">
+    <table class="table table-sm table-pin-rows w-full [&_td]:py-1 [&_th]:py-2 [&_tbody_tr]:bg-base-100 [&_tbody_tr:nth-child(even)]:bg-base-300">
+        <thead>
+            <tr>
+                {% for col in result.columns %}
+                <th class="bg-base-100 border-b-2 border-base-content/20 relative" data-column="{{ col }}">
+                    {{ col }}
+                    <div class="resize-handle"></div>
+                </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in result.rows %}
+            <tr>
+                {% for val in row %}
+                <td class="max-w-md truncate">
+                    {% if val is mapping and val.__type is defined %}
+                        {% if val.__type == 'path' %}
+                    <span class="text-secondary">{{ val.display }}</span>
+                        {% else %}
+                    <span class="clickable-cell cursor-pointer hover:underline text-primary"
+                          data-type="{{ val.__type }}"
+                          data-id="{{ val.id }}">{{ val.display }}<span class="info-icon opacity-50">&#9432;</span></span>
+                        {% endif %}
+                    {% else %}
+                    <span title="{{ val }}">{{ val }}</span>
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center py-8 text-base-content/50">
+    No rows returned
+</div>
+{% endif %}
